@@ -2,9 +2,15 @@ hazelcast-store
 ===============
 Hazelcast maps keep data in memory. Not news to anyone of course. By default, the data only exists in memory, plus a number of copies for safety. The copies will ensure that you don't lose anything, even if a node in your cluster dies. Sometimes, you might not be able to hold all the data in your universe in memory. Sometimes, you might want to be able to shut down the whole cluster without losing the data. For those scenarios and others, you can provide a MapStore implementation.
 
+Our implementations aim to be simple and generic. We favour blob storage where a serialized version of the map values are saved in binary form. If you want a more elaborate, normalized version we recommend your own implementation based on Hibernate or MyBatis for example.
+
+When saving blobs, all data can be saved in one big table, and the assumption is that all access goes through the cache. No direct database access is allowed, since all you'd see is binary objects and if you're lucky, a key against them.
+
+There are a few challenges however. As your domain model i.e. your Portables evolves, previously saved values might no longer be deserializable into newer versions of the classes. One approach is to go through all records and read them out using the old class version and re-save them with the new. Transformation logic can be provided between versions to make this process easier.
+
 ##Implementations
 
 ####SqlMapStore
-Generic SQL based MapStore which saves map values as blobs (binary large objects) in a variety of RDBMS databases.
+Generic SQL based MapStore which saves map values as blobs in a variety of RDBMS databases.
 
 ######User Guide
