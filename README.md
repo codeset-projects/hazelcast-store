@@ -13,6 +13,41 @@ Hazelcast does not yet provide access to the raw Portable bytes. So typically de
 ##Implementations
 
 ####SqlMapStore
-Generic SQL based MapStore which saves map values as blobs in a variety of RDBMS databases.
+A generic SQL based MapStore which saves map values as blobs in a variety of RDBMS databases.
 
 ######User Guide
+Create the backing database table. You can see an example in /src/main/schema/mysql_schema.sql.
+```
+CREATE DATABASE <REPLACE WITH YOUR DATABASE NAME>;
+
+CREATE TABLE <REPLACE WITH YOUR DATABASE NAME>.<REPLACE WITH YOUR TABLE NAME> (
+  map_key       VARCHAR(256)    PRIMARY KEY,
+  class_name    VARCHAR(256)    NOT NULL,
+  bytes         BLOB            NULL
+)
+```
+As you can see, it's a very simple table with a column for the key (map_key) and a column for the Java className (class_name) and a column for the bytes. The map_key is the primary key of the table.
+
+Start with replacing the values in the brackets with yours.
+
+Create an instance of the SqlMapStore for each map you wish to persist. An important assumption is that the values stored in the map are of the same class.
+```
+Class<?> type = MyPortable.class;
+DataSource dataSource = ...;
+Statements statements = new MySqlStatements("codeset_db", "hz_mapstore");
+Serializer serializer = new KryoSerializer();
+SqlMapStore myMapStore = new SqlMapStore(type, dataSource, statements, serializer)
+```
+This might look like a pain, but we wanted to keep everything nicely decoupled to allow for various customizations.
+
+* Class<?> type. This argument specifies the class that is going to be saved in the Map and database. Without this information, it would be a bit difficult to work out what the bytes held in the database should be deserialized into.
+* DataSource dataSource. Any standard javax.sql.DataSource implementation will do.
+* Statements statements. The Statements hold the SQL for the MapStore implementation. You can easily provide your own implementation or use one of ours. Each implementation might required different configuration, but typically the database and table are required at least.
+* Serializer serializer. The Serializer transforms values from objects into bytes and back again. We provide a Kryo based implementation which is very fast.
+
+Configure the MapStore in the config (see the Hazelcast docs for all the options):
+```
+MapConfig mapConfig = config.getMapConfig("myMap");
+MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+mapStoreConfig.setImplementation(myMapStore);
+mapStoreConfig.setEnabled(true);
