@@ -13,6 +13,7 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import codeset.hazelcast.store.serialize.KryoSerializer;
 import codeset.hazelcast.store.serialize.Serializer;
 
 import com.hazelcast.core.MapStore;
@@ -51,6 +52,17 @@ public class SqlMapStore implements MapStore<String, Object> {
     private Serializer serializer;
 
     /**
+     * Construct a new SqlMapStore for a type with default Kryo serialization.
+     * 
+     * @param type
+     * @param dataSource
+     * @param statements
+     */
+    public SqlMapStore(Class<?> type, DataSource dataSource, Statements statements) {
+        this(type, dataSource, statements, new KryoSerializer());
+    }
+
+    /**
      * Construct a new SqlMapStore for a type.
      * 
      * @param type
@@ -67,19 +79,32 @@ public class SqlMapStore implements MapStore<String, Object> {
 
     }
 
+    /**
+     * Store a single value in the database. It checks if the value exists and
+     * if so, it will perform an update otherwise an insert.
+     * 
+     * @param key The key of the value in the map. This should be the primary
+     * key of the value in the database.
+     * @param value The value to persist to the database.
+     */
     @Override
     public void store(String key, Object value) {
 
         try (Connection connection = dataSource.getConnection()) {
-            try (CallableStatement statement = connection.prepareCall(statements.getStoreSql())) {
-                byte[] bytes = serializer.toBytes(value);
-
+            CallableStatement statement = null;
+            if(load(key) == null) {
+                statement = connection.prepareCall(statements.getInsertSql());
                 statement.setString(1, key);
                 statement.setString(2, type.getName());
-                statement.setBytes(3, bytes);
-
-                statement.executeUpdate();
+                statement.setBytes(3, serializer.toBytes(value));
+            } else {
+                statement = connection.prepareCall(statements.getUpdateSql());
+                statement.setString(1, key);
+                statement.setString(2, type.getName());
+                statement.setBytes(3, serializer.toBytes(value));
+                statement.setString(4, key);
             }
+            statement.executeUpdate();
             connection.commit();
         } catch (SQLException e) {
             throw new SqlMapStoreException("Failed to store " + type.getName() + " with key " + key, e);
@@ -90,31 +115,8 @@ public class SqlMapStore implements MapStore<String, Object> {
     @Override
     public void storeAll(Map<String, Object> values) {
 
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try (CallableStatement statement = connection.prepareCall(statements.getStoreAllSql())) {
-
-                int count = 0;
-                for (Map.Entry<String, Object> entry : values.entrySet()) {
-
-                    byte[] bytes = serializer.toBytes(entry.getValue());
-
-                    statement.setString(1, entry.getKey());
-                    statement.setString(2, type.getName());
-                    statement.setBytes(3, bytes);
-
-                    statement.addBatch();
-
-                    if ((++count) % MAX_BATCH_SIZE == 0) {
-                        statement.executeBatch();
-                        connection.commit();
-                    }
-                }
-                statement.executeBatch();
-            }
-            connection.commit();
-        } catch (SQLException e) {
-            throw new SqlMapStoreException("Failed to store all " + type.getName() + "(s)", e);
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            store(entry.getKey(), entry.getValue());
         }
 
     }
@@ -141,6 +143,12 @@ public class SqlMapStore implements MapStore<String, Object> {
 
     }
 
+    /**
+     * Retrieve a map of values to be stored in the map. The values will be
+     * stored using putTransient() hence no store operation will be triggered.
+     * 
+     * @param keys The keys for which to load the values.
+     */
     @Override
     public Map<String, Object> loadAll(Collection<String> keys) {
 

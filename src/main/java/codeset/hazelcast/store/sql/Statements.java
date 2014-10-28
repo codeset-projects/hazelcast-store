@@ -11,7 +11,7 @@ package codeset.hazelcast.store.sql;
 public interface Statements {
 
     /**
-     * The SQL for a single object store.
+     * The SQL for a single object insert.
      * 
      * Expects 3 parameters:
      * 
@@ -21,10 +21,23 @@ public interface Statements {
      * 
      * @return the SQL statement.
      */
-    String getStoreSql();
+    String getInsertSql();
 
     /**
-     * The SQL for a multi-object store. This is typically the same as for a
+     * The SQL for a single object update.
+     * 
+     * Expects 3 parameters:
+     * 
+     * 1. key. A string representing the unique map key.
+     * 2. class_name. A string representing the className of the value.
+     * 3. bytes. Byte representation of the value.
+     * 
+     * @return the SQL statement.
+     */
+    String getUpdateSql();
+
+    /**
+     * The SQL for a multi-object insert. This is typically the same as for a
      * single store.
      * 
      * Expects 3 parameters:
@@ -35,7 +48,21 @@ public interface Statements {
      * 
      * @return the SQL statement.
      */
-    String getStoreAllSql();
+    String getInsertAllSql();
+
+    /**
+     * The SQL for a multi-object update. This is typically the same as for a
+     * single store.
+     * 
+     * Expects 3 parameters:
+     * 
+     * 1. key. A string representing the unique map key.
+     * 2. class_name. A string representing the className of the value.
+     * 3. bytes. Byte representation of the value.
+     * 
+     * @return the SQL statement.
+     */
+    String getUpdateAllSql();
 
     /**
      * The SQL for a single delete.

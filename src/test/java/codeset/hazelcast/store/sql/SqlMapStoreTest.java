@@ -17,8 +17,6 @@ import org.junit.Test;
 import codeset.hazelcast.store.PortableClass;
 import codeset.hazelcast.store.serialize.KryoSerializer;
 import codeset.hazelcast.store.serialize.Serializer;
-import codeset.hazelcast.store.sql.SqlMapStore;
-import codeset.hazelcast.store.sql.Statements;
 import codeset.hazelcast.store.sql.mysql.MySqlStatements;
 
 public class SqlMapStoreTest {
@@ -36,10 +34,10 @@ public class SqlMapStoreTest {
         PortableClass result = (PortableClass) mapStore.load(key);
         assertNotNull(result);
 
-//        value.setStringProperty("UPDATED");
-//        mapStore.store(key, value);
-//        result = (PortableClass) mapStore.load(key);
-//        assertEquals("UPDATED", result.getStringProperty());
+        value.setStringProperty("UPDATED");
+        mapStore.store(key, value);
+        result = (PortableClass) mapStore.load(key);
+        assertEquals("UPDATED", result.getStringProperty());
 
         mapStore.delete(key);
         result = (PortableClass) mapStore.load(key);
@@ -78,7 +76,37 @@ public class SqlMapStoreTest {
 
     }
 
-    public SqlMapStore getMapStore() {
+    @Test
+    public void testPerformance() {
+
+        SqlMapStore mapStore = getMapStore();
+
+        Map<String, Object> values = new HashMap<>();
+        Set<String> keys = new HashSet<>();
+        int numberOfRecords = 100000;
+
+        for(int i = 0; i < numberOfRecords; i++) {
+            String key = UUID.randomUUID().toString();
+            keys.add(key);
+            PortableClass value = new PortableClass();
+            values.put(key, value);
+        }
+        long start = System.currentTimeMillis();
+        mapStore.storeAll(values);
+        System.out.println("Duration of new records storeAll " + numberOfRecords + " " + (System.currentTimeMillis() - start) + "ms");
+        start = System.currentTimeMillis();
+        mapStore.storeAll(values);
+        System.out.println("Duration of existing records storeAll " + numberOfRecords + " " + (System.currentTimeMillis() - start) + "ms");
+        start = System.currentTimeMillis();
+        mapStore.storeAll(values);
+        System.out.println("Duration of new records storeAll " + numberOfRecords + " " + (System.currentTimeMillis() - start) + "ms");
+        start = System.currentTimeMillis();
+        mapStore.storeAll(values);
+        System.out.println("Duration of existing records storeAll " + numberOfRecords + " " + (System.currentTimeMillis() - start) + "ms");
+
+    }
+
+    private SqlMapStore getMapStore() {
 
         String url = "jdbc:mysql://127.0.0.1:3306/codeset?relaxAutoCommit=true&amp;rewriteBatchedStatements=true&amp;autoReconnect=true&amp;useConfigs=maxPerformance";
         String username = "dev";

@@ -17,8 +17,8 @@ public class MySqlStatementsTest {
 
         Statements statements = new MySqlStatements(schema, tableName);
 
-        assertEquals("INSERT INTO `test_schema`.`test_table` (map_key, class_name, bytes) VALUES (?, ?, ?)", statements.getStoreSql());
-        assertEquals("INSERT INTO `test_schema`.`test_table` (map_key, class_name, bytes) VALUES (?, ?, ?)", statements.getStoreAllSql());
+        assertEquals("INSERT INTO `test_schema`.`test_table` (map_key, class_name, bytes) VALUES (?, ?, ?)", statements.getInsertSql());
+        assertEquals("INSERT INTO `test_schema`.`test_table` (map_key, class_name, bytes) VALUES (?, ?, ?)", statements.getInsertAllSql());
         assertEquals("SELECT bytes FROM `test_schema`.`test_table` WHERE map_key = ?", statements.getLoadSql());
         assertEquals("SELECT map_key, bytes FROM `test_schema`.`test_table` WHERE map_key IN ", statements.getLoadAllSql());
         assertEquals("SELECT map_key FROM `test_schema`.`test_table` WHERE class_name = ?", statements.getLoadKeysSql());

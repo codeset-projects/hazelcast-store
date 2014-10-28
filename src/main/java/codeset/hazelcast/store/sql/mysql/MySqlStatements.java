@@ -4,7 +4,8 @@ import codeset.hazelcast.store.sql.Statements;
 
 public class MySqlStatements implements Statements {
 
-    private String storeSql;
+    private String insertSql;
+    private String updateSql;
     private String deleteSql;
     private String loadSql;
     private String loadAllSql;
@@ -19,8 +20,13 @@ public class MySqlStatements implements Statements {
             throw new IllegalArgumentException("Argument 'tableName' cannot be null or empty");
         }
 
-        storeSql = String.format("INSERT INTO `%s`.`%s` ("
+        insertSql = String.format("INSERT INTO `%s`.`%s` ("
                 + "map_key, class_name, bytes) VALUES (?, ?, ?)",
+                schema, tableName);
+
+        updateSql = String.format("UPDATE `%s`.`%s` SET "
+                + "map_key = ?, class_name = ?, bytes = ? "
+                + "where map_key = ?",
                 schema, tableName);
 
         loadSql = String.format("SELECT bytes FROM `%s`.`%s` WHERE map_key = ?", schema, tableName);
@@ -33,12 +39,20 @@ public class MySqlStatements implements Statements {
 
     }
 
-    public String getStoreSql() {
-        return storeSql;
+    public String getInsertSql() {
+        return insertSql;
     }
 
-    public String getStoreAllSql() {
-        return storeSql;
+    public String getUpdateSql() {
+        return updateSql;
+    }
+
+    public String getInsertAllSql() {
+        return insertSql;
+    }
+
+    public String getUpdateAllSql() {
+        return updateSql;
     }
 
     public String getDeleteAllSql() {
