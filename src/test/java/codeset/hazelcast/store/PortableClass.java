@@ -3,9 +3,7 @@ package codeset.hazelcast.store;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -25,21 +23,64 @@ public class PortableClass implements Portable {
     private Double doubleProperty;
     private String stringProperty;
     private Boolean booleanProperty;
-    private Byte byteProperty;
-    private Character charProperty;
-    private Float floatProperty;
-    private Short shortProperty;
     private NestedPortableClass nestedProperty;
     private List<NestedPortableClass> listProperty = new ArrayList<>();
-    private Set<NestedPortableClass> setProperty = new HashSet<>();
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
+        Long datePropertyAsLong = reader.readLong("dateProperty");
+        if(datePropertyAsLong != null) {
+            dateProperty = new Date(datePropertyAsLong);
+        }
+        intProperty = reader.readInt("intProperty");
+        longProperty = reader.readLong("longProperty");
+        doubleProperty = reader.readDouble("doubleProperty");
+        if(reader.readBoolean("_has__stringProperty")) {
+            stringProperty = reader.readUTF("stringProperty");
+        }
+        booleanProperty = reader.readBoolean("booleanProperty");
+        if(reader.readBoolean("_has__nestedProperty")) {
+            nestedProperty = reader.readPortable("nestedProperty");
+        }
+        if(reader.readBoolean("_has__listProperty")) {
+            Portable[] listPropertyArr = reader.readPortableArray("listProperty");
+            for (Portable p:listPropertyArr) {
+                listProperty.add((NestedPortableClass) p);  
+            }
+        }
     }
 
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
+        if(dateProperty != null) {
+            writer.writeLong("dateProperty", dateProperty.getTime());
+        }
+        if(intProperty != null) {
+            writer.writeInt("intProperty", intProperty);
+        }
+        if(longProperty != null) {
+            writer.writeLong("longProperty", longProperty);
+        }
+        if(doubleProperty != null) {
+            writer.writeDouble("doubleProperty", doubleProperty);
+        }
+        if(stringProperty != null) {
+            writer.writeUTF("stringProperty", stringProperty);
+            writer.writeBoolean("_has__stringProperty", true);
+        }
+        if(booleanProperty != null) {
+            writer.writeBoolean("booleanProperty", booleanProperty);
+        }
+        if(nestedProperty != null) {
+            writer.writePortable("nestedProperty", nestedProperty);
+            writer.writeBoolean("_has__nestedProperty", true);
+        }
+        if(listProperty != null && !listProperty.isEmpty()) {
+            writer.writePortableArray("listProperty", listProperty.toArray(new Portable[listProperty.size()]));
+            writer.writeBoolean("_has__nestedProperty", true);
+        }
     }
+
 
     @Override
     public int getClassId() {
@@ -113,46 +154,6 @@ public class PortableClass implements Portable {
 
     public void setListProperty(List<NestedPortableClass> listProperty) {
         this.listProperty = listProperty;
-    }
-
-    public Byte getByteProperty() {
-        return byteProperty;
-    }
-
-    public void setByteProperty(Byte byteProperty) {
-        this.byteProperty = byteProperty;
-    }
-
-    public Character getCharProperty() {
-        return charProperty;
-    }
-
-    public void setCharProperty(Character charProperty) {
-        this.charProperty = charProperty;
-    }
-
-    public Float getFloatProperty() {
-        return floatProperty;
-    }
-
-    public void setFloatProperty(Float floatProperty) {
-        this.floatProperty = floatProperty;
-    }
-
-    public Short getShortProperty() {
-        return shortProperty;
-    }
-
-    public void setShortProperty(Short shortProperty) {
-        this.shortProperty = shortProperty;
-    }
-
-    public Set<NestedPortableClass> getSetProperty() {
-        return setProperty;
-    }
-
-    public void setSetProperty(Set<NestedPortableClass> setProperty) {
-        this.setProperty = setProperty;
     }
 
 }
