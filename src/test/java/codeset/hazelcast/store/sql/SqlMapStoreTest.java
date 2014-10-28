@@ -83,7 +83,7 @@ public class SqlMapStoreTest {
 
         Map<String, Object> values = new HashMap<>();
         Set<String> keys = new HashSet<>();
-        int numberOfRecords = 100000;
+        int numberOfRecords = 1000;
 
         for(int i = 0; i < numberOfRecords; i++) {
             String key = UUID.randomUUID().toString();

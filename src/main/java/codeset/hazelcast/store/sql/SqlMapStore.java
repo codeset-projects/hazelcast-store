@@ -26,7 +26,7 @@ import com.hazelcast.core.MapStore;
  */
 public class SqlMapStore implements MapStore<String, Object> {
 
-    private final static int MAX_BATCH_SIZE = 1000;
+    private final static int MAX_BATCH_SIZE = 10000;
 
     /**
      * The class of the objects stored. This is required in order to make the
@@ -112,15 +112,75 @@ public class SqlMapStore implements MapStore<String, Object> {
 
     }
 
+    /**
+     * Store a map of multiple values in the database. It checks if the value exists and
+     * if so, it will perform an update otherwise an insert.
+     * 
+     * Create batches of values to be saved and atomically commit them.
+     * 
+     * @param values The map of values to be saved.
+     */
     @Override
     public void storeAll(Map<String, Object> values) {
 
-        for (Map.Entry<String, Object> entry : values.entrySet()) {
-            store(entry.getKey(), entry.getValue());
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+
+            // Load all existing keys from the database for faster check if
+            // a value exists in the database or not.
+            Set<String> existingKeys = loadAllKeys();
+
+            PreparedStatement insertStatement = connection.prepareStatement(statements.getInsertAllSql());
+            PreparedStatement updateStatement = connection.prepareStatement(statements.getUpdateAllSql());
+
+            int insertCount = 0;
+            int updateCount = 0;
+            for (Map.Entry<String, Object> entry : values.entrySet()) {
+
+                String key = entry.getKey();
+                Object value = entry.getValue();
+
+                boolean existing = existingKeys.contains(key);
+
+                if(!existing) {
+                    insertStatement.setString(1, key);
+                    insertStatement.setString(2, type.getName());
+                    insertStatement.setBytes(3, serializer.toBytes(value));
+                    insertStatement.addBatch();
+                } else {
+                    updateStatement.setString(1, key);
+                    updateStatement.setString(2, type.getName());
+                    updateStatement.setBytes(3, serializer.toBytes(value));
+                    updateStatement.setString(4, key);
+                    updateStatement.addBatch();
+                }
+
+                // Commit batches of statements
+                if ((++insertCount) % MAX_BATCH_SIZE == 0) {
+                    insertStatement.executeBatch();
+                    connection.commit();
+                }
+
+                if ((++updateCount) % MAX_BATCH_SIZE == 0) {
+                    updateStatement.executeBatch();
+                    connection.commit();
+                }
+            }
+            insertStatement.executeBatch();
+            updateStatement.executeBatch();
+            connection.commit();
+        } catch (SQLException e) {
+            throw new SqlMapStoreException(e);
         }
 
     }
 
+    /**
+     * Load a single value from the database.
+     * 
+     * @param key The primary key of the value in the database.
+     * @return The matching value or null if not found.
+     */
     @Override
     public Object load(String key) {
 
@@ -187,6 +247,9 @@ public class SqlMapStore implements MapStore<String, Object> {
 
     }
 
+    /**
+     * Retrieve all keys from the database for the type.
+     */
     @Override
     public Set<String> loadAllKeys() {
 
@@ -208,6 +271,11 @@ public class SqlMapStore implements MapStore<String, Object> {
 
     }
 
+    /**
+     * Delete a value in the database.
+     * 
+     * @param key The primary key for the value in the database.
+     */
     @Override
     public void delete(String key) {
 
@@ -223,6 +291,11 @@ public class SqlMapStore implements MapStore<String, Object> {
 
     }
 
+    /**
+     * Delete all values in the database for a set of keys.
+     * 
+     * @param keys The keys of the values to be deleted.
+     */
     @Override
     public void deleteAll(Collection<String> keys) {
 
