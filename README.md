@@ -55,3 +55,7 @@ MapConfig mapConfig = config.getMapConfig("myMap");
 MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
 mapStoreConfig.setImplementation(myMapStore);
 mapStoreConfig.setEnabled(true);
+```
+####Todo
+* Add support for more database vendors.
+* Add class version byte upgrader.
