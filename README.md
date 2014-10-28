@@ -28,7 +28,7 @@ CREATE TABLE <REPLACE WITH YOUR DATABASE NAME>.<REPLACE WITH YOUR TABLE NAME> (
 ```
 As you can see, it's a very simple table with a column for the key (map_key) and a column for the Java className (class_name) and a column for the bytes. The map_key is the primary key of the table.
 
-Start with replacing the values in the brackets with yours.
+Start with replacing the values in the brackets with yours. Then run the script in your target database.
 
 Create an instance of the SqlMapStore for each map you wish to persist. An important assumption is that the values stored in the map are of the same class.
 ```
@@ -40,10 +40,10 @@ SqlMapStore myMapStore = new SqlMapStore(type, dataSource, statements, serialize
 ```
 This might look like a pain, but we wanted to keep everything nicely decoupled to allow for various customizations.
 
-* Class<?> type. This argument specifies the class that is going to be saved in the Map and database. Without this information, it would be a bit difficult to work out what the bytes held in the database should be deserialized into.
-* DataSource dataSource. Any standard javax.sql.DataSource implementation will do.
-* Statements statements. The Statements hold the SQL for the MapStore implementation. You can easily provide your own implementation or use one of ours. Each implementation might required different configuration, but typically the database and table are required at least.
-* Serializer serializer. The Serializer transforms values from objects into bytes and back again. We provide a Kryo based implementation which is very fast.
+* type (Class<?>). This argument specifies the class that is going to be saved in the Map and database. Without this information, it would be a bit difficult to work out what the bytes held in the database should be deserialized into.
+* dataSource (javax.sql.DataSource). Any standard implementation will do.
+* Statements statements (codeset.hazelcast.store.sql.Statements). The Statements hold the SQL for the MapStore implementation. You can easily provide your own implementation or use one of ours. Each implementation might required different configuration, but typically the database and table are required at least.
+* Serializer serializer (codeset.hazelcast.store.serialize.Serializer). The Serializer transforms values from objects into bytes and back again. We provide a Kryo based implementation which is very fast.
 
 Configure the MapStore in the config (see the Hazelcast docs for all the options):
 ```
