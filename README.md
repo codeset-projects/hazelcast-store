@@ -35,11 +35,14 @@ Create an instance of the SqlMapStore for each map you wish to persist. An impor
 Class<?> type = MyPortable.class;
 DataSource dataSource = ...;
 Statements statements = new MySqlStatements("codeset_db", "hz_mapstore");
-Serializer serializer = new KryoSerializer();
-SqlMapStore myMapStore = new SqlMapStore(type, dataSource, statements, serializer)
+SqlMapStore myMapStore = new SqlMapStore(type, dataSource, statements);
 ```
 This might look like a pain, but we wanted to keep everything nicely decoupled to allow for various customizations.
 
+You can provide your own serializer implementation:
+```
+SqlMapStore myMapStore = new SqlMapStore(type, dataSource, statements, new MyOwnSerializer());
+```
 Arguments:
 * type (Class<?>). This argument specifies the class that is going to be saved in the Map and database. Without this information, it would be a bit difficult to work out what the bytes held in the database should be deserialized into.
 * dataSource (javax.sql.DataSource). Any standard implementation will do.
