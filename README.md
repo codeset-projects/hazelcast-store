@@ -40,10 +40,11 @@ SqlMapStore myMapStore = new SqlMapStore(type, dataSource, statements, serialize
 ```
 This might look like a pain, but we wanted to keep everything nicely decoupled to allow for various customizations.
 
+Arguments:
 * type (Class<?>). This argument specifies the class that is going to be saved in the Map and database. Without this information, it would be a bit difficult to work out what the bytes held in the database should be deserialized into.
 * dataSource (javax.sql.DataSource). Any standard implementation will do.
-* Statements (codeset.hazelcast.store.sql.Statements). The Statements hold the SQL for the MapStore implementation. You can easily provide your own implementation or use one of ours. Each implementation might required different configuration, but typically the database and table are required at least.
-* Serializer (codeset.hazelcast.store.serialize.Serializer). The Serializer transforms values from objects into bytes and back again. We provide a Kryo based implementation which is very fast.
+* statements (codeset.hazelcast.store.sql.Statements). The Statements hold the SQL for the MapStore implementation. You can easily provide your own implementation or use one of ours. Each implementation might required different configuration, but typically the database and table are required at least.
+* serializer (codeset.hazelcast.store.serialize.Serializer). The Serializer transforms values from objects into bytes and back again. We provide a Kryo based implementation which is very fast.
 
 Configure the MapStore in the config (see the Hazelcast docs for all the options):
 ```
