@@ -52,9 +52,10 @@ Arguments:
 Configure the MapStore in the config (see the Hazelcast docs for all the options):
 ```
 MapConfig mapConfig = config.getMapConfig("myMap");
-MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+MapStoreConfig mapStoreConfig = new MapStoreConfig();
 mapStoreConfig.setImplementation(myMapStore);
 mapStoreConfig.setEnabled(true);
+mapConfig.setMapStoreConfig(mapStoreConfig);
 ```
 ####Todo
 * Add support for more database vendors.
